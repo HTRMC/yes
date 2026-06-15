@@ -257,14 +257,7 @@ fn windowPoll(context: *anyopaque, platform_window: *PlatformWindow) anyerror!?P
 
             return null;
         },
-        win32.WM_DESTROY => .close,
-        win32.WM_SYSCOMMAND => switch (msg.wParam) {
-            win32.SC_CLOSE => .close,
-            else => {
-                std.log.warn("unknown WM_SYSCOMMAND: {d}", .{msg.wParam});
-                return null;
-            },
-        },
+        win32.WM_USER + win32.WM_CLOSE => .close,
         win32.WM_USER + win32.WM_SETFOCUS => .{ .focus = true },
         win32.WM_USER + win32.WM_KILLFOCUS => .{ .focus = false },
         win32.WM_USER + win32.WM_SIZE => .{ .resize = .{
@@ -508,7 +501,7 @@ fn openglGetProcAddress(procname: [*:0]const u8) callconv(opengl.APIENTRY) ?open
 
 fn wndProc(hwnd: win32.HWND, msg: u32, wParam: usize, lParam: isize) callconv(.winapi) isize {
     return switch (msg) {
-        win32.WM_GETMINMAXINFO, win32.WM_SIZE, win32.WM_MOVE, win32.WM_SETFOCUS, win32.WM_KILLFOCUS => |wm| {
+        win32.WM_GETMINMAXINFO, win32.WM_SIZE, win32.WM_MOVE, win32.WM_SETFOCUS, win32.WM_KILLFOCUS, win32.WM_CLOSE => |wm| {
             if (!win32.SUCCEEDED(win32.PostMessageW(hwnd, win32.WM_USER + wm, wParam, lParam))) reportErr(error.PostMessage) catch {};
             return 0;
         },
