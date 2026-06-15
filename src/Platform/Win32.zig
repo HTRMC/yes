@@ -285,13 +285,12 @@ fn windowPoll(context: *anyopaque, platform_window: *PlatformWindow) anyerror!?P
             .y = @floatFromInt(@as(u16, @truncate(@as(usize, @intCast(msg.lParam >> 16))))),
         } },
         win32.WM_MOUSEWHEEL, win32.WM_MOUSEHWHEEL => {
-            const delta: isize = @intCast((msg.wParam >> 16) & 0xFFFF);
-            var lines: isize = @intCast(@divTrunc(delta, @as(isize, @intCast(win32.WHEEL_DELTA)))); // lines > 0 -> scroll right, lines < 0 -> left
-            if (lines == 545) lines = -1;
+            const delta: isize = @as(i16, @bitCast(@as(u16, @truncate(msg.wParam >> 16)))); // signed high word: up/right > 0, down/left < 0
+            const lines: isize = @divTrunc(delta, @as(isize, @intCast(win32.WHEEL_DELTA)));
             return .{
                 .mouse_scroll = switch (msg.message) {
-                    win32.WM_MOUSEWHEEL => .{ .horizontal = @floatFromInt(lines) },
-                    win32.WM_MOUSEHWHEEL => .{ .vertical = @floatFromInt(lines) },
+                    win32.WM_MOUSEWHEEL => .{ .vertical = @floatFromInt(lines) },
+                    win32.WM_MOUSEHWHEEL => .{ .horizontal = @floatFromInt(lines) },
                     else => unreachable,
                 },
             };
